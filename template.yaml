@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  S3LinkGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./s3-link-generator/
+      Handler: s3_link_generator.lambda_handler
+      Runtime: python3.11
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          URL_EXPIRATION_SECONDS: 86400
+          EVENT_SOURCE: s3-link-generator
+          EVENT_DETAIL_TYPE: file-link-generated
+          EVENT_BUS_NAME: default
+      Policies:
+        - S3ReadPolicy:
+            BucketName: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - events:PutEvents
+              Resource: '*'
+
+  WebhookDispatcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./s3-event-webhook-dispatcher/
+      Handler: main
+      Runtime: go1.x
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          WEBHOOK_URL: your-webhook-url-here
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: '*'

@@ -1,0 +1,11 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "s3-stack"
+region = "us-east-2"
+
+[default.sync.parameters]
+template_file = "c:\\Users\\k33bz\\OneDrive\\git\\s3-event-webhook-dispatcher\\template.yaml"
+s3_bucket = "kastroso-prod-storage-minecraft-backups"
+dependency_layer = false
+watch = true

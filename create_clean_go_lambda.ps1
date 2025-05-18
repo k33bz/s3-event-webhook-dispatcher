@@ -1,4 +1,33 @@
-﻿package main
+# create_go_lambda_fixed.ps1
+
+# Set working directory to script location
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location -Path $scriptPath
+
+# Create a temporary directory for our new Go project
+$tempGoDir = ".\go_lambda_temp"
+if (Test-Path -Path $tempGoDir) {
+    # Clean up any existing directory
+    Remove-Item -Path $tempGoDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $tempGoDir | Out-Null
+
+# Navigate to the temporary Go project directory
+Set-Location -Path $tempGoDir
+
+# Initialize a new Go module
+Write-Host "Initializing a new Go module..."
+& go mod init lambda-webhook-dispatcher
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to initialize Go module"
+    Set-Location -Path $scriptPath
+    exit 1
+}
+
+# Create main.go file with Lambda handler
+Write-Host "Creating main.go..."
+$lambdaCode = @'
+package main
 
 import (
 	"bytes"
@@ -46,7 +75,7 @@ type DiscordMessage struct {
 func getRandomRainbowColor() int {
 	// Initialize random seed
 	rand.Seed(time.Now().UnixNano())
-
+	
 	// Rainbow-like colors
 	rainbowColors := []int{
 		16711680, // Red (#FF0000)
@@ -64,7 +93,7 @@ func getRandomRainbowColor() int {
 		16711935, // Magenta (#FF00FF)
 		16711807, // Pink (#FF00BF)
 	}
-
+	
 	// Return a random color from the rainbow array
 	return rainbowColors[rand.Intn(len(rainbowColors))]
 }
@@ -147,3 +176,49 @@ func Handler(ctx context.Context, event events.CloudWatchEvent) error {
 func main() {
 	lambda.Start(Handler)
 }
+'@
+
+# Save the Lambda code to main.go
+$lambdaCode | Out-File -FilePath "main.go" -Encoding utf8
+
+# Get dependencies
+Write-Host "Getting dependencies..."
+& go get github.com/aws/aws-lambda-go/lambda
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to get lambda dependency"
+    Set-Location -Path $scriptPath
+    exit 1
+}
+
+& go get github.com/aws/aws-lambda-go/events
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to get events dependency"
+    Set-Location -Path $scriptPath
+    exit 1
+}
+
+# Build the Go binary for Lambda - naming it bootstrap for provided.al2023 runtime
+Write-Host "Building Go binary for Lambda (ARM64)..."
+$env:GOOS = "linux"
+$env:GOARCH = "arm64"
+& go build -o bootstrap main.go
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to build Go binary"
+    Set-Location -Path $scriptPath
+    exit 1
+}
+
+# Create a ZIP file with the binary
+Write-Host "Creating deployment package..."
+Compress-Archive -Path "bootstrap" -DestinationPath "function.zip" -Force
+Write-Host "Created zip file using PowerShell's Compress-Archive"
+
+# Copy the ZIP file to the original s3-event-webhook-dispatcher directory
+Copy-Item -Path "function.zip" -Destination "..\s3-event-webhook-dispatcher\" -Force
+Write-Host "Copied deployment package to s3-event-webhook-dispatcher directory"
+
+# Navigate back to original directory
+Set-Location -Path $scriptPath
+
+Write-Host "Deployment package created at .\s3-event-webhook-dispatcher\function.zip"
+Write-Host "You can now update your Lambda function"

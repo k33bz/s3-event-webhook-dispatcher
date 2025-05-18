@@ -1,0 +1,4 @@
+{
+  "source": ["s3-link-generator"],
+  "detail-type": ["file-link-generated"]
+}

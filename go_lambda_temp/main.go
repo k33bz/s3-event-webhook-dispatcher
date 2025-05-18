@@ -46,7 +46,7 @@ type DiscordMessage struct {
 func getRandomRainbowColor() int {
 	// Initialize random seed
 	rand.Seed(time.Now().UnixNano())
-
+	
 	// Rainbow-like colors
 	rainbowColors := []int{
 		16711680, // Red (#FF0000)
@@ -64,7 +64,7 @@ func getRandomRainbowColor() int {
 		16711935, // Magenta (#FF00FF)
 		16711807, // Pink (#FF00BF)
 	}
-
+	
 	// Return a random color from the rainbow array
 	return rainbowColors[rand.Intn(len(rainbowColors))]
 }

@@ -1,6 +1,6 @@
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -23,3 +23,62 @@ go.work.sum
 
 # env file
 .env
+
+# Build and deployment artifacts
+deployment/
+*.zip
+bootstrap
+main
+
+# AWS SAM build directory
+.aws-sam/
+build/
+cache/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+wheels/
+*.egg
+
+# Lambda deployment packages
+discord-cleanup-lambda/
+requests-layer/
+**/package/
+*-lambda.zip
+*-layer.zip
+discord-cleanup-lambda.zip
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# AWS credential files
+.aws/
+credentials
+config
+
+# Local test files
+test-file.txt
+test-file2.txt
+
+# Environment Variables
+*.env

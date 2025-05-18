@@ -1,4 +1,21 @@
-﻿package main
+# Navigate to s3-event-webhook-dispatcher directory
+Set-Location -Path ".\s3-event-webhook-dispatcher"
+
+# Remove existing go.mod if it exists
+if (Test-Path -Path "go.mod") {
+    Remove-Item -Path "go.mod" -Force
+}
+
+# Use the go mod edit command as suggested by the error
+& go mod edit -module=github.com/k33bz/s3-event-webhook-dispatcher
+
+# Add the required dependencies
+& go get github.com/aws/aws-lambda-go/lambda
+& go get github.com/aws/aws-lambda-go/events
+
+# Create the main.go file
+$goCode = @'
+package main
 
 import (
 	"bytes"
@@ -46,7 +63,7 @@ type DiscordMessage struct {
 func getRandomRainbowColor() int {
 	// Initialize random seed
 	rand.Seed(time.Now().UnixNano())
-
+	
 	// Rainbow-like colors
 	rainbowColors := []int{
 		16711680, // Red (#FF0000)
@@ -64,7 +81,7 @@ func getRandomRainbowColor() int {
 		16711935, // Magenta (#FF00FF)
 		16711807, // Pink (#FF00BF)
 	}
-
+	
 	// Return a random color from the rainbow array
 	return rainbowColors[rand.Intn(len(rainbowColors))]
 }
@@ -147,3 +164,13 @@ func Handler(ctx context.Context, event events.CloudWatchEvent) error {
 func main() {
 	lambda.Start(Handler)
 }
+'@
+
+# Save the code to main.go
+$goCode | Out-File -Path "main.go" -Encoding utf8
+
+# Run go mod tidy to ensure the go.mod file is properly updated
+& go mod tidy
+
+# Return to the original directory
+Set-Location -Path ".."
