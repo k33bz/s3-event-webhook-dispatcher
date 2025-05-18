@@ -82,3 +82,6 @@ test-file2.txt
 
 # Environment Variables
 *.env
+
+#PowerShell Scripts
+*.ps1
