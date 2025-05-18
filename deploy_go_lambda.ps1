@@ -1,5 +1,13 @@
 # deploy_go_lambda.ps1
 
+# Check for AWS account ID environment variable or prompt for it
+if (-not $env:AWS_ACCOUNT_ID) {
+    $env:AWS_ACCOUNT_ID = Read-Host "Enter your AWS Account ID"
+    if (-not $env:AWS_ACCOUNT_ID) {
+        throw "AWS Account ID is required"
+    }
+}
+
 # First, build the Go Lambda if it hasn't been built yet
 if (-not (Test-Path -Path ".\s3-event-webhook-dispatcher\function.zip")) {
     Write-Host "Building Go Lambda function..."
@@ -14,7 +22,7 @@ Write-Host "Deploying Go Lambda function..."
     --runtime "go1.x" `
     --architectures "arm64" `
     --handler "main" `
-    --role "arn:aws:iam::842233511452:role/LambdaS3EventNotifierRole" `
+    --role "arn:aws:iam::$env:AWS_ACCOUNT_ID/role/LambdaS3EventNotifierRole" `
     --zip-file "fileb://s3-event-webhook-dispatcher/function.zip" `
     --region "us-east-2"
 

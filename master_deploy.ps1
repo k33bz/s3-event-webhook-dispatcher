@@ -4,6 +4,14 @@
 $ErrorActionPreference = "Stop"
 $global:DeploymentSuccess = $true
 
+# Check for AWS account ID environment variable or prompt for it
+if (-not $env:AWS_ACCOUNT_ID) {
+    $env:AWS_ACCOUNT_ID = Read-Host "Enter your AWS Account ID"
+    if (-not $env:AWS_ACCOUNT_ID) {
+        throw "AWS Account ID is required"
+    }
+}
+
 # Create log directory if it doesn't exist
 if (-not (Test-Path -Path ".\deployment_logs")) {
     New-Item -ItemType Directory -Path ".\deployment_logs" | Out-Null
@@ -156,7 +164,7 @@ try {
             --runtime "python3.11" `
             --architectures "arm64" `
             --handler "s3_link_generator.lambda_handler" `
-            --role "arn:aws:iam::842233511452:role/LambdaS3EventNotifierRole" `
+            --role "arn:aws:iam::$env:AWS_ACCOUNT_ID/role/LambdaS3EventNotifierRole" `
             --zip-file "fileb://deployment/deployment_package.zip" `
             --region "us-east-2" `
             --environment "Variables={URL_EXPIRATION_SECONDS=86400,EVENT_SOURCE=s3-link-generator,EVENT_DETAIL_TYPE=file-link-generated}"
@@ -217,7 +225,7 @@ try {
             --runtime "go1.x" `
             --architectures "arm64" `
             --handler "main" `
-            --role "arn:aws:iam::842233511452:role/LambdaS3EventNotifierRole" `
+            --role "arn:aws:iam::$env:AWS_ACCOUNT_ID/role/LambdaS3EventNotifierRole" `
             --zip-file "fileb://s3-event-webhook-dispatcher/function.zip" `
             --region "us-east-2" `
             --environment "Variables={WEBHOOK_URL=$webhookUrl}"
@@ -238,7 +246,7 @@ try {
     # Add the Link Generator Lambda as a target
     & aws events put-targets `
         --rule "s3-object-created" `
-        --targets "Id=1,Arn=arn:aws:lambda:us-east-2:842233511452:function:s3-link-generator" `
+        --targets "Id=1,Arn=arn:aws:lambda:us-east-2:$env:AWS_ACCOUNT_ID:function:s3-link-generator" `
         --region "us-east-2"
     if ($LASTEXITCODE -ne 0) { Write-Host "Warning: Target addition might have failed or already exists" -ForegroundColor Yellow }
 
@@ -249,7 +257,7 @@ try {
             --statement-id "s3-events" `
             --action "lambda:InvokeFunction" `
             --principal "events.amazonaws.com" `
-            --source-arn "arn:aws:events:us-east-2:842233511452:rule/s3-object-created" `
+            --source-arn "arn:aws:events:us-east-2:$env:AWS_ACCOUNT_ID:rule/s3-object-created" `
             --region "us-east-2"
         if ($LASTEXITCODE -ne 0) { 
             # If it fails, it might be because the permission already exists
@@ -269,7 +277,7 @@ try {
     # Add the Webhook Dispatcher Lambda as a target
     & aws events put-targets `
         --rule "link-generated" `
-        --targets "Id=1,Arn=arn:aws:lambda:us-east-2:842233511452:function:s3-event-webhook-dispatcher" `
+        --targets "Id=1,Arn=arn:aws:lambda:us-east-2:$env:AWS_ACCOUNT_ID:function:s3-event-webhook-dispatcher" `
         --region "us-east-2"
     if ($LASTEXITCODE -ne 0) { Write-Host "Warning: Target addition might have failed or already exists" -ForegroundColor Yellow }
 
@@ -280,7 +288,7 @@ try {
             --statement-id "link-events" `
             --action "lambda:InvokeFunction" `
             --principal "events.amazonaws.com" `
-            --source-arn "arn:aws:events:us-east-2:842233511452:rule/link-generated" `
+            --source-arn "arn:aws:events:us-east-2:$env:AWS_ACCOUNT_ID:rule/link-generated" `
             --region "us-east-2"
         if ($LASTEXITCODE -ne 0) { 
             # If it fails, it might be because the permission already exists

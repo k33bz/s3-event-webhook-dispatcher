@@ -83,5 +83,17 @@ test-file2.txt
 # Environment Variables
 *.env
 
-#PowerShell Scripts
+# PowerShell Scripts
 *.ps1
+
+# Logs
+deployment_logs/
+*.log
+
+# Temporary files
+temp/
+tmp/
+
+# AWS account IDs and sensitive information
+**/account_id.txt
+**/webhook_url.txt

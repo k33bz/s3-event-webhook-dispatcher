@@ -100,7 +100,7 @@ func Handler(ctx context.Context, event events.CloudWatchEvent) error {
 				Color:       getRandomRainbowColor(),
 				Timestamp:   time.Now().Format(time.RFC3339),
 				Footer: EmbedItem{
-					Text: "Gaymitcraft File Notification System",
+					Text: "S3 File Notification System",
 				},
 			},
 		},
